@@ -5,47 +5,65 @@
 # led_state
 # status READY or ERROR
 
-class FakeHardware:
+from device_interface import DeviceInterface, LedState, DeviceStatus, DeviceNotConnectedError, InvalidCommandError
+from enum import Enum
 
-    _instance = None
+class FakeHardware(DeviceInterface):
 
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+    def __init__(self, firmware_version="1.0"):
+        self.firmware_version = firmware_version
+        self.temp = 36
+        self.led_state = LedState.OFF
+        self.connection = False
+        self.status = DeviceStatus.READY
+        self.pong = "PONG"
+        self.boot_count = 0
 
-    def __init__(self, firmware_version=1):
-        if not hasattr(self, "_initialized"):
-            self.firmware_version = firmware_version
-            self.temp = 36
-            self.led_state = 0
-            self.status = "READY"
-            self.pong = "PONG"
+    def connect(self) -> None:
+        self.connection = True
 
-            self._initialized = True
+    def disconnect(self) -> None:
+        self.connection = False
 
-    def ping(self):
+    def is_connected(self) -> bool:
+        return self.connection
+    
+    def ping(self) -> str:
+        if not self.connection:
+            raise DeviceNotConnectedError("device is not connected")
         return self.pong
 
-    def get_status(self):
+    def get_status(self) -> DeviceStatus:
+        if not self.connection:
+            raise DeviceNotConnectedError("device is not connected")
         return self.status
 
-    def get_version(self):
+    def get_version(self) -> str:
+        if not self.connection:
+            raise DeviceNotConnectedError("device is not connected")
         return self.firmware_version
 
-    def get_temp(self):
+    def get_temp(self) -> float:
+        if not self.connection:
+            raise DeviceNotConnectedError("device is not connected")
         return self.temp
 
-    def get_led(self):
+    def get_led(self) -> LedState:
+        if not self.connection:
+            raise DeviceNotConnectedError("device is not connected")
         return self.led_state
 
-    def set_led(self, state=0):
-        if state != 0 or state != 1:
-            print("Invalid state number. Exiting")
-            return
+    def set_led(self, state: LedState) -> None:
+        if not self.connection:
+            raise DeviceNotConnectedError("device is not connected")
+        if not isinstance(state, LedState):
+            raise InvalidCommandError(f"expected LedState, got {state!r}")
         self.led_state = state
 
-    def reset(self):
-        #No idea what this will do here
-        return
+    def reset(self) -> None:
+        if not self.is_connected():
+            raise DeviceNotConnectedError("device is not connected")
+        self.led_state = LedState.OFF
+        self.status = DeviceStatus.READY
+        self.boot_count += 1
     
