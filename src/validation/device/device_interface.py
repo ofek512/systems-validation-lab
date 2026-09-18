@@ -41,7 +41,7 @@ class DeviceInterface(ABC):
     def get_status(self) -> DeviceStatus:
         ...
     @abstractmethod
-    def get_temp(self) -> float:
+    def get_temperature(self) -> float:
         ...
     @abstractmethod
     def set_led(self, state: LedState) -> None:

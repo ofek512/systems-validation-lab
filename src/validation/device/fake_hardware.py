@@ -5,7 +5,7 @@
 # led_state
 # status READY or ERROR
 
-from device_interface import DeviceInterface, LedState, DeviceStatus, DeviceNotConnectedError, InvalidCommandError
+from validation.device.device_interface import DeviceInterface, LedState, DeviceStatus, DeviceNotConnectedError, InvalidCommandError
 from enum import Enum
 
 class FakeHardware(DeviceInterface):
@@ -43,7 +43,7 @@ class FakeHardware(DeviceInterface):
             raise DeviceNotConnectedError("device is not connected")
         return self.firmware_version
 
-    def get_temp(self) -> float:
+    def get_temperature(self) -> float:
         if not self.connection:
             raise DeviceNotConnectedError("device is not connected")
         return self.temp
