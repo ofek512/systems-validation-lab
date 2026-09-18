@@ -66,4 +66,13 @@ class FakeHardware(DeviceInterface):
         self.led_state = LedState.OFF
         self.status = DeviceStatus.READY
         self.boot_count += 1
+
+    def inject_temperature(self, value: float) -> None:
+        self.temp = value
+
+    def inject_status(self, status: DeviceStatus) -> None:
+        self.status = status
+
+    def inject_version(self, version: str) -> None:
+        self.firmware_version = version
     
