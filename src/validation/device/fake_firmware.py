@@ -30,7 +30,51 @@ class FakeFirmware():
             "RESET": self._handle_reset
         }
 
+        self._pending_misbehavior = None   # (kind, payload) tuple, consumed by the next call
+        self._last_response = None         # what the previous command actually answered
+
+    # --- test hooks: each arms exactly one misbehavior for the *next* handle_request call ---
+
+    def simulate_silence(self) -> None:
+        self._pending_misbehavior = ("SILENCE", None)
+
+    def simulate_garbage(self, text: str = "%$GARBAGE$%") -> None:
+        self._pending_misbehavior = ("GARBAGE", text)
+
+    def simulate_trailing_cr(self) -> None:
+        self._pending_misbehavior = ("TRAILING_CR", None)
+
+    def simulate_desync(self) -> None:
+        self._pending_misbehavior = ("DESYNC", None)
+
     def handle_request(self, line: str) -> str | None:
+        misbehavior = self._pending_misbehavior
+        self._pending_misbehavior = None  # one-shot: reset before acting on it
+
+        if misbehavior is None:
+            response = self._dispatch(line)
+            self._last_response = response
+            return response
+
+        kind, payload = misbehavior
+
+        if kind == "SILENCE":
+            return None  # device received the command but never answers
+
+        if kind == "GARBAGE":
+            return payload  # wrong prefix / unparseable text instead of a real reply
+
+        if kind == "DESYNC":
+            stale_response = self._last_response
+            self._dispatch(line)          # device still processes the command internally...
+            return stale_response          # ...but the host reads the previous answer instead
+
+        # kind == "TRAILING_CR"
+        response = self._dispatch(line)
+        self._last_response = response
+        return response if response is None else response + "\r"
+
+    def _dispatch(self, line: str) -> str | None:
         parsed = self._parse_request(line)
         if parsed is None:
             return None

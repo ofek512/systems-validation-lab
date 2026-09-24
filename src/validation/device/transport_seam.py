@@ -16,5 +16,5 @@ class TransportSeam(ABC):
         ...
 
     @abstractmethod
-    def read_line(self, timeout: float) -> str:
+    def read_line(self, timeout: float) -> str | None:
         ...
